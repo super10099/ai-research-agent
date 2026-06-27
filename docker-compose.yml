@@ -1,0 +1,63 @@
+services:
+
+  # ── ChromaDB vector store ──────────────────────────────────────────────────
+  chromadb:
+    image: chromadb/chroma:latest
+    ports:
+      - "8001:8000"   # 8001 on host → 8000 inside container (avoids conflict with backend)
+    volumes:
+      - chroma_data:/chroma/chroma    # persists the HNSW index and SQLite metadata
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ── FastAPI backend ────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: .          # build context is the repo root
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env              # provides ANTHROPIC_API_KEY, COHERE_API_KEY, TAVILY_API_KEY, etc.
+    environment:
+      # These override .env so the backend finds the chromadb *service*, not localhost.
+      # Inside docker-compose, service names are DNS hostnames on the default bridge network.
+      # "chromadb:8000" resolves to the chromadb container's port 8000 — not the host's 8001.
+      CHROMA_USE_HTTP: "true"
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: "8000"
+      # Mount point for SQLite checkpoint DB and chroma data (when not using HTTP)
+      LANGGRAPH_CHECKPOINT_DB: /data/checkpoints.db
+    volumes:
+      - app_data:/data    # persists LangGraph checkpoints across container restarts
+    depends_on:
+      chromadb:
+        condition: service_healthy   # backend won't start until chromadb passes its healthcheck
+
+  # ── Ingestion job (run once to seed ChromaDB) ─────────────────────────────
+  # Usage:  docker compose run --rm ingest
+  # Runs the document ingestion pipeline against the running chromadb service.
+  ingest:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "-m", "src.ingestion.pipeline"]
+    env_file:
+      - .env
+    environment:
+      CHROMA_USE_HTTP: "true"
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: "8000"
+    depends_on:
+      chromadb:
+        condition: service_healthy
+    profiles:
+      - tools   # not started by default; only with --profile tools
+
+volumes:
+  chroma_data:   # HNSW index persisted inside the chromadb container's filesystem
+  app_data:      # LangGraph checkpoint SQLite DB

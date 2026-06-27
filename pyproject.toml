@@ -1,0 +1,94 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ai-research-agent"
+version = "0.1.0"
+description = "Multi-agent research assistant with RAG, reranking, and streaming"
+requires-python = ">=3.11"
+dependencies = [
+    # ── LLM ──────────────────────────────────────────────────────────────────
+    # Direct Anthropic SDK — we call the API ourselves, not through LangChain,
+    # so we control batching, retry logic, and streaming exactly.
+    "anthropic>=0.40.0",
+    # ── Orchestration ────────────────────────────────────────────────────────
+    # LangGraph: explicit state-machine graph over agents.
+    # Depends on langchain-core for BaseMessage types and LangSmith hooks.
+    "langgraph>=0.2.0",
+    "langchain-core>=0.3.0",
+    # SQLite-backed checkpointer — persists graph state between invocations.
+    # Separate package from langgraph so the storage backend is swappable.
+    "langgraph-checkpoint-sqlite>=2.0.0",
+    # ── Observability ────────────────────────────────────────────────────────
+    # LangSmith: distributed tracing for every node execution and LLM call.
+    # Wraps around any langchain-core runnable automatically when env vars set.
+    "langsmith>=0.1.0",
+    # ── Vector store ─────────────────────────────────────────────────────────
+    # ChromaDB: embedded vector DB, runs in-process or as a server.
+    # We run it in-process locally and as a Docker service in prod.
+    "chromadb>=0.5.0",
+    # ── Embeddings ───────────────────────────────────────────────────────────
+    # sentence-transformers wraps HuggingFace models; bge-large-en-v1.5
+    # scores well on MTEB retrieval benchmarks without needing an API call.
+    "sentence-transformers>=3.0.0",
+    # ── Reranking ────────────────────────────────────────────────────────────
+    # Cohere rerank-english-v3.0: cross-encoder that scores (query, doc) pairs.
+    # Two-stage retrieve → rerank is much cheaper than cross-encoding everything.
+    "cohere>=5.0.0",
+    # ── Web search ───────────────────────────────────────────────────────────
+    # Tavily: search API designed for LLM agents, returns clean text snippets.
+    "tavily-python>=0.3.0",
+    # ── API / Streaming ──────────────────────────────────────────────────────
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    # sse-starlette provides the EventSourceResponse class for SSE endpoints.
+    "sse-starlette>=2.1.0",
+    # ── HTTP / document fetching ─────────────────────────────────────────────
+    # httpx over requests: native async support, connection pooling, HTTP/2.
+    # Critical for parallel paper downloads without thread overhead.
+    "httpx>=0.27.0",
+    "beautifulsoup4>=4.12.0",
+    "lxml>=5.0.0",           # faster BS4 parser than html.parser
+    # ── Tokenization ─────────────────────────────────────────────────────────
+    # tiktoken: fast BPE tokenizer, needed to count tokens when chunking.
+    # We chunk by token count, not character count, so chunk sizes are accurate.
+    "tiktoken>=0.7.0",
+    # ── Config / env ─────────────────────────────────────────────────────────
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.0.0",       # settings + data validation; FastAPI depends on it
+    "pydantic-settings>=2.0.0",  # BaseSettings for typed env-var loading
+    # ── Numeric ──────────────────────────────────────────────────────────────
+    "numpy>=1.26.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.6.0",
+    "mypy>=1.11.0",
+    "ipython>=8.0.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+# ── Ruff (linter + formatter) ────────────────────────────────────────────────
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+# ── pytest ───────────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+# ── mypy ─────────────────────────────────────────────────────────────────────
+[tool.mypy]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true

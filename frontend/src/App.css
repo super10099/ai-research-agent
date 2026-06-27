@@ -1,0 +1,223 @@
+/* ── Reset & base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #0f0f17;
+  --surface:  #1a1a2e;
+  --border:   #2a2a45;
+  --text:     #cdd6f4;
+  --muted:    #6c7086;
+  --accent:   #89b4fa;
+  --green:    #a6e3a1;
+  --yellow:   #f9e2af;
+  --red:      #f38ba8;
+  --radius:   8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+}
+
+body { min-height: 100vh; }
+
+/* ── Layout ───────────────────────────────────────────────────────────────── */
+.app {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+header {
+  margin-bottom: 2.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1.25rem;
+}
+
+header h1 { font-size: 1.4rem; font-weight: 700; color: var(--accent); }
+header p  { font-size: 0.85rem; color: var(--muted); margin-top: 0.25rem; }
+
+/* ── Form ─────────────────────────────────────────────────────────────────── */
+.research-form { display: flex; gap: 0.75rem; }
+
+.research-form input {
+  flex: 1;
+  padding: 0.65rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.research-form input:focus  { border-color: var(--accent); }
+.research-form input::placeholder { color: var(--muted); }
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+button {
+  padding: 0.65rem 1.25rem;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-primary   { background: var(--accent); color: #0f0f17; }
+.btn-approve   { background: var(--green);  color: #0f0f17; margin-top: 1.25rem; }
+.btn-reset     { background: var(--surface); color: var(--muted);
+                 border: 1px solid var(--border); }
+button:not(:disabled):hover { opacity: 0.85; }
+
+/* ── Status / phase labels ────────────────────────────────────────────────── */
+.phase-bar {
+  margin-top: 1.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.phase-bar .dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.phase-researching .dot { background: var(--yellow); animation: pulse 1.2s infinite; }
+.phase-synthesizing .dot { background: var(--accent); animation: pulse 0.8s infinite; }
+.phase-complete .dot    { background: var(--green); }
+.phase-error .dot       { background: var(--red); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* ── Research summary card ────────────────────────────────────────────────── */
+.summary-card {
+  margin-top: 1.75rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.summary-card h2 { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em;
+                   text-transform: uppercase; color: var(--muted); margin-bottom: 0.9rem; }
+
+.sub-questions { list-style: none; display: flex; flex-direction: column; gap: 0.45rem; }
+.sub-questions li {
+  padding: 0.45rem 0.75rem;
+  background: var(--bg);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 4px 4px 0;
+  font-size: 0.9rem;
+}
+
+.critique-text {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.gaps { margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.gap-tag {
+  padding: 0.25rem 0.65rem;
+  background: #2d1e0f;
+  border: 1px solid #5a3a1a;
+  border-radius: 100px;
+  font-size: 0.8rem;
+  color: var(--yellow);
+}
+
+.divider { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+
+/* ── Streaming report ─────────────────────────────────────────────────────── */
+.report-section { margin-top: 1.75rem; }
+.report-section h2 {
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 0.9rem;
+}
+
+/* Raw streaming view — monospaced, no markdown rendering yet */
+.stream-box {
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: 0.83rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.7;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* Blinking cursor appended during streaming */
+.stream-box::after {
+  content: '▋';
+  display: inline;
+  animation: blink 1s step-start infinite;
+  color: var(--accent);
+}
+.stream-box.done::after { content: ''; animation: none; }
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* Rendered markdown report (after streaming completes) */
+.rendered-report {
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  line-height: 1.75;
+}
+.rendered-report h2 { font-size: 1.1rem; color: var(--accent);
+                      margin: 1.5rem 0 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
+.rendered-report h3 { font-size: 0.95rem; color: var(--green); margin: 1rem 0 0.35rem; }
+.rendered-report p  { color: var(--text); margin-bottom: 0.8rem; }
+.rendered-report ul, .rendered-report ol { padding-left: 1.5rem; margin-bottom: 0.8rem; }
+.rendered-report li { margin-bottom: 0.3rem; }
+.rendered-report code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.82em;
+  background: var(--bg);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  color: var(--yellow);
+}
+
+/* ── Error ────────────────────────────────────────────────────────────────── */
+.error-box {
+  margin-top: 1.5rem;
+  padding: 0.9rem 1rem;
+  background: #1e0f0f;
+  border: 1px solid #5a1a1a;
+  border-radius: var(--radius);
+  color: var(--red);
+  font-size: 0.88rem;
+}
+
+/* ── Iter badge ───────────────────────────────────────────────────────────── */
+.iter-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-left: 0.5rem;
+}

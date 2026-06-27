@@ -1,0 +1,27 @@
+# secrets
+.env
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+dist/
+*.egg-info/
+.venv/
+
+# data (generated at runtime)
+data/chroma/
+data/checkpoints.db
+data/papers/
+
+# frontend
+node_modules/
+frontend/dist/
+frontend/.env
+
+# ide / tooling
+.claude/
+.DS_Store
