@@ -1,6 +1,6 @@
-<svg viewBox="0 0 880 680" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, sans-serif" role="img">
+<svg viewBox="0 0 880 706" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, sans-serif" role="img">
   <title>AI Research Agent — system architecture</title>
-  <rect width="880" height="680" fill="#0f0f17" rx="10"/>
+  <rect width="880" height="706" fill="#0f0f17" rx="10"/>
   <defs>
     <marker id="a0" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#585b70"/></marker>
     <marker id="ap" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#cba6f7"/></marker>
@@ -50,28 +50,43 @@
   <text x="224" y="246" fill="#6c7086" text-anchor="middle" font-size="9">topic → sub-questions</text>
   <text x="224" y="258" fill="#45475a" text-anchor="middle" font-size="9">injects prior_context</text>
 
+  <!-- research_one: drawn as a stack of offset cards to convey "N parallel,
+       independently checkpointed node instances spawned via Send" — this is
+       the piece that replaced the single "Researcher" node + asyncio.gather. -->
+  <rect x="292" y="196" width="124" height="52" rx="5" fill="#241a3d" stroke="#6c5a99" stroke-width="1.2"/>
+  <rect x="299" y="203" width="124" height="52" rx="5" fill="#271c42" stroke="#7d68ad" stroke-width="1.2"/>
   <rect x="306" y="210" width="124" height="52" rx="5" fill="#2d1e4a" stroke="#cba6f7" stroke-width="1.5"/>
-  <text x="368" y="230" fill="#cba6f7" text-anchor="middle" font-size="11" font-weight="700">Researcher</text>
+  <text x="368" y="230" fill="#cba6f7" text-anchor="middle" font-size="11" font-weight="700">research_one</text>
   <text x="368" y="246" fill="#6c7086" text-anchor="middle" font-size="9">agentic tool loop</text>
-  <text x="368" y="258" fill="#45475a" text-anchor="middle" font-size="9">parallel per question</text>
+  <text x="368" y="258" fill="#45475a" text-anchor="middle" font-size="9">× N via Send (parallel)</text>
 
   <rect x="450" y="210" width="124" height="52" rx="5" fill="#2d1e4a" stroke="#cba6f7" stroke-width="1.5"/>
   <text x="512" y="230" fill="#cba6f7" text-anchor="middle" font-size="11" font-weight="700">Critic</text>
   <text x="512" y="246" fill="#6c7086" text-anchor="middle" font-size="9">evaluates coverage</text>
-  <text x="512" y="258" fill="#45475a" text-anchor="middle" font-size="9">identifies gaps</text>
+  <text x="512" y="258" fill="#45475a" text-anchor="middle" font-size="9">join point · identifies gaps</text>
 
   <rect x="594" y="210" width="124" height="52" rx="5" fill="#2d1e4a" stroke="#cba6f7" stroke-width="1.5"/>
   <text x="656" y="230" fill="#cba6f7" text-anchor="middle" font-size="11" font-weight="700">Synthesizer</text>
   <text x="656" y="246" fill="#6c7086" text-anchor="middle" font-size="9">writes final report</text>
   <text x="656" y="258" fill="#45475a" text-anchor="middle" font-size="9">streams tokens → SSE</text>
 
-  <line x1="286" y1="236" x2="306" y2="236" stroke="#cba6f7" stroke-width="1.5" marker-end="url(#ap)"/>
-  <line x1="430" y1="236" x2="450" y2="236" stroke="#cba6f7" stroke-width="1.5" marker-end="url(#ap)"/>
-  <line x1="574" y1="236" x2="594" y2="236" stroke="#cba6f7" stroke-width="1.5" marker-end="url(#ap)"/>
+  <!-- Planner → research_one: fan-out (Send × N), 3 diverging lines instead
+       of a single edge, to distinguish from a plain LangGraph edge. -->
+  <line x1="286" y1="236" x2="306" y2="222" stroke="#cba6f7" stroke-width="1.3" marker-end="url(#ap)"/>
+  <line x1="286" y1="236" x2="306" y2="236" stroke="#cba6f7" stroke-width="1.3" marker-end="url(#ap)"/>
+  <line x1="286" y1="236" x2="306" y2="250" stroke="#cba6f7" stroke-width="1.3" marker-end="url(#ap)"/>
+  <text x="296" y="278" fill="#cba6f7" text-anchor="middle" font-size="8">Send</text>
 
-  <!-- Critic loop-back -->
+  <!-- research_one → Critic: join (all parallel branches converge before
+       Critic runs — LangGraph's superstep barrier). -->
+  <line x1="430" y1="222" x2="450" y2="236" stroke="#cba6f7" stroke-width="1.3" marker-end="url(#ap)"/>
+  <line x1="430" y1="236" x2="450" y2="236" stroke="#cba6f7" stroke-width="1.3" marker-end="url(#ap)"/>
+  <line x1="430" y1="250" x2="450" y2="236" stroke="#cba6f7" stroke-width="1.3" marker-end="url(#ap)"/>
+  <text x="440" y="278" fill="#cba6f7" text-anchor="middle" font-size="8">join</text>
+
+  <!-- Critic loop-back: also a Send fan-out (over gaps, not sub_questions) -->
   <path d="M 512 210 Q 512 188 440 188 Q 368 188 368 210" fill="none" stroke="#f9e2af" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#ay)"/>
-  <text x="440" y="184" fill="#f9e2af" text-anchor="middle" font-size="9">needs_more = True</text>
+  <text x="440" y="184" fill="#f9e2af" text-anchor="middle" font-size="9">needs_more=True → Send(gaps)</text>
 
   <!-- POST → Planner -->
   <line x1="290" y1="166" x2="237" y2="210" stroke="#585b70" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#a0)"/>
@@ -83,7 +98,7 @@
   <rect x="746" y="212" width="86" height="48" rx="5" fill="#1e1e2e" stroke="#45475a" stroke-width="1"/>
   <text x="789" y="231" fill="#585b70" text-anchor="middle" font-size="10" font-weight="600">SQLite</text>
   <text x="789" y="246" fill="#45475a" text-anchor="middle" font-size="9">checkpoints</text>
-  <text x="789" y="257" fill="#45475a" text-anchor="middle" font-size="8">per node</text>
+  <text x="789" y="257" fill="#45475a" text-anchor="middle" font-size="8">per node (per Send branch)</text>
   <line x1="718" y1="236" x2="746" y2="236" stroke="#45475a" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#a0)"/>
 
   <!-- TOOLS -->
@@ -97,7 +112,7 @@
 
   <line x1="344" y1="262" x2="300" y2="312" stroke="#f9e2af" stroke-width="1.5" marker-end="url(#ay)"/>
   <line x1="400" y1="262" x2="462" y2="312" stroke="#f9e2af" stroke-width="1.5" marker-end="url(#ay)"/>
-  <text x="378" y="294" fill="#f9e2af" text-anchor="middle" font-size="9">parallel</text>
+  <text x="378" y="294" fill="#f9e2af" text-anchor="middle" font-size="9">per-branch</text>
 
   <!-- MEMORY -->
   <ellipse cx="244" cy="432" rx="112" ry="28" fill="#121e28" stroke="#89dceb" stroke-width="1.5"/>
@@ -137,18 +152,31 @@
   <line x1="244" y1="492" x2="244" y2="460" stroke="#fab387" stroke-width="2.5" marker-end="url(#ao)"/>
   <text x="256" y="478" fill="#fab387" font-size="9">write</text>
 
-  <!-- LEGEND -->
-  <rect x="88" y="572" width="748" height="44" rx="5" fill="#13131f" stroke="#313244" stroke-width="1"/>
-  <line x1="108" y1="597" x2="132" y2="597" stroke="#cba6f7" stroke-width="2" marker-end="url(#ap)"/>
-  <text x="136" y="601" fill="#9399b2" font-size="9">LangGraph edge</text>
-  <line x1="244" y1="597" x2="268" y2="597" stroke="#f9e2af" stroke-width="2" marker-end="url(#ay)"/>
-  <text x="272" y="601" fill="#9399b2" font-size="9">tool call</text>
-  <line x1="346" y1="597" x2="370" y2="597" stroke="#89dceb" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#ac)"/>
-  <text x="374" y="601" fill="#9399b2" font-size="9">memory r/w</text>
-  <line x1="462" y1="597" x2="486" y2="597" stroke="#a6e3a1" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#ag)"/>
-  <text x="490" y="601" fill="#9399b2" font-size="9">SSE stream</text>
-  <line x1="572" y1="597" x2="596" y2="597" stroke="#fab387" stroke-width="2.5" marker-end="url(#ao)"/>
-  <text x="600" y="601" fill="#9399b2" font-size="9">ingest write</text>
-  <line x1="682" y1="597" x2="706" y2="597" stroke="#45475a" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#a0)"/>
-  <text x="710" y="601" fill="#9399b2" font-size="9">checkpoint</text>
+  <!-- LEGEND (two rows) -->
+  <rect x="88" y="572" width="748" height="68" rx="5" fill="#13131f" stroke="#313244" stroke-width="1"/>
+
+  <line x1="108" y1="592" x2="132" y2="592" stroke="#cba6f7" stroke-width="2" marker-end="url(#ap)"/>
+  <text x="136" y="596" fill="#9399b2" font-size="9">LangGraph edge</text>
+
+  <line x1="244" y1="592" x2="268" y2="592" stroke="#f9e2af" stroke-width="2" marker-end="url(#ay)"/>
+  <text x="272" y="596" fill="#9399b2" font-size="9">tool call</text>
+
+  <line x1="346" y1="592" x2="370" y2="592" stroke="#89dceb" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#ac)"/>
+  <text x="374" y="596" fill="#9399b2" font-size="9">memory r/w</text>
+
+  <line x1="462" y1="592" x2="486" y2="592" stroke="#a6e3a1" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#ag)"/>
+  <text x="490" y="596" fill="#9399b2" font-size="9">SSE stream</text>
+
+  <line x1="108" y1="616" x2="132" y2="616" stroke="#fab387" stroke-width="2.5" marker-end="url(#ao)"/>
+  <text x="136" y="620" fill="#9399b2" font-size="9">ingest write</text>
+
+  <line x1="244" y1="616" x2="268" y2="616" stroke="#45475a" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#a0)"/>
+  <text x="272" y="620" fill="#9399b2" font-size="9">checkpoint</text>
+
+  <!-- Send fan-out / join: three tiny diverging lines into one point,
+       distinguishing it from a plain single-target LangGraph edge above. -->
+  <line x1="382" y1="610" x2="402" y2="616" stroke="#cba6f7" stroke-width="1.3" marker-end="url(#ap)"/>
+  <line x1="382" y1="616" x2="402" y2="616" stroke="#cba6f7" stroke-width="1.3" marker-end="url(#ap)"/>
+  <line x1="382" y1="622" x2="402" y2="616" stroke="#cba6f7" stroke-width="1.3" marker-end="url(#ap)"/>
+  <text x="406" y="620" fill="#9399b2" font-size="9">Send fan-out / join (N parallel branches)</text>
 </svg>

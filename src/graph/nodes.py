@@ -6,10 +6,10 @@ LangGraph merges the returned dict into the state using per-field reducers
 (defined in state.py).  Nodes never mutate state in place.
 """
 
-import asyncio
 import json
+from typing import TypedDict
 
-from langgraph.config import adispatch_custom_event
+from langchain_core.callbacks import adispatch_custom_event
 
 from src.config import settings
 from src.graph.state import AgentState
@@ -202,35 +202,25 @@ async def planner_node(state: AgentState) -> dict:
     return {"sub_questions": sub_questions}
 
 
-# ── Node: Researcher ──────────────────────────────────────────────────────────
+# ── Node: research_one (parallel LangGraph branch, one per question) ──────────
 
-async def researcher_node(state: AgentState) -> dict:
+class ResearchTask(TypedDict):
+    """Input schema for a single `Send("research_one", ...)` branch invocation."""
+    question: str
+
+
+async def research_one_node(task: ResearchTask) -> dict:
     """
-    Research every pending question in parallel.
-
-    On the first iteration, questions = sub_questions from the planner.
-    On subsequent iterations (critic flagged gaps), questions = the gap list.
-
-    asyncio.gather fans out all questions concurrently — each runs its own
-    independent agentic tool loop.  Total wall time ≈ max(per-question time)
-    rather than sum(per-question time).
+    Research exactly one question. Each sub-question becomes its own LangGraph
+    node invocation via the `Send` API (see builder.py fan-out functions), so
+    this receives an isolated {"question": ...} input rather than the full
+    AgentState — LangGraph runs one instance of this node per Send, each with
+    its own checkpoint, and joins the results back into AgentState via the
+    research_results reducer (operator.add).
     """
-    # First pass: research all sub-questions.
-    # Subsequent passes: only research the gaps the critic identified.
-    questions = state.get("gaps") if state.get("iteration", 0) > 0 else state["sub_questions"]
-    if not questions:
-        questions = state["sub_questions"]
-
-    print(f"[researcher] Researching {len(questions)} questions (iteration {state.get('iteration', 0) + 1})...")
-
-    results: list[dict] = list(
-        await asyncio.gather(*[_research_one_question(q) for q in questions])
-    )
-
-    return {
-        "research_results": results,          # appended to existing list by reducer
-        "iteration": state.get("iteration", 0) + 1,
-    }
+    result = await _research_one_question(task["question"])
+    print(f"[research_one] Done: {task['question'][:60]}")
+    return {"research_results": [result]}
 
 
 # ── Node: Critic ──────────────────────────────────────────────────────────────
@@ -266,8 +256,13 @@ async def critic_node(state: AgentState) -> dict:
     except (json.JSONDecodeError, KeyError) as exc:
         raise ValueError(f"Critic returned malformed JSON: {exc}\n{response.content[0].text}")
 
+    # `critic` is the join point after every research wave (all parallel
+    # `research_one` Send branches converge here), so it owns the iteration
+    # counter — no single research node runs "once per wave" anymore.
+    new_iteration = state.get("iteration", 0) + 1
+
     # Respect the max_iterations ceiling regardless of what the critic says.
-    at_limit = state.get("iteration", 0) >= state.get("max_iterations", settings.max_research_iterations)
+    at_limit = new_iteration >= state.get("max_iterations", settings.max_research_iterations)
     needs_more = parsed.get("needs_more_research", False) and not at_limit
 
     print(f"[critic] needs_more_research={needs_more}, gaps={parsed.get('gaps', [])}")
@@ -275,6 +270,7 @@ async def critic_node(state: AgentState) -> dict:
         "critique": parsed.get("critique", ""),
         "gaps": parsed.get("gaps", []),
         "needs_more_research": needs_more,
+        "iteration": new_iteration,
     }
 
 
@@ -288,10 +284,14 @@ async def synthesizer_node(state: AgentState) -> dict:
     messages.create().  For each text delta, we dispatch a "synthesis_token"
     custom event.
 
-    adispatch_custom_event is a no-op when called outside an astream_events
-    context (e.g., running via graph.ainvoke in run.py).  So this node works
-    correctly in both streaming and non-streaming execution paths without any
-    conditional branching.
+    adispatch_custom_event only requires an active parent run (which LangGraph
+    always sets up for a node, whether invoked via ainvoke or astream_events);
+    it has no effect when there's no handler listening for custom events
+    (e.g., running via graph.ainvoke in run.py).  So this node works correctly
+    in both streaming and non-streaming execution paths without any
+    conditional branching. Imported from langchain_core.callbacks directly —
+    LangGraph re-exported this from langgraph.config prior to v1.0, but that
+    re-export was removed; the underlying function is unchanged.
     """
     research_block = "\n\n".join(
         f"**Question:** {r['question']}\n**Findings:** {r['answer']}"

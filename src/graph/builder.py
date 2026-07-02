@@ -10,24 +10,42 @@ import os
 
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
+from langgraph.types import Send
 
 from src.config import settings
-from src.graph.nodes import critic_node, planner_node, researcher_node, synthesizer_node
+from src.graph.nodes import critic_node, planner_node, research_one_node, synthesizer_node
 from src.graph.state import AgentState
 
 
-# ── Routing function ─────────────────────────────────────────────────────────
+# ── Routing functions ─────────────────────────────────────────────────────────
+#
+# Both of these return `Send` objects instead of plain node-name strings.
+# Each `Send("research_one", {...})` spawns its own instance of research_one
+# with an isolated input — LangGraph runs all of them as parallel branches,
+# gives each its own checkpoint, and joins them back into shared AgentState
+# (via the research_results reducer) before the next node in the edge list
+# (critic) runs. This replaces the old single "researcher" node that used
+# asyncio.gather internally — that gave concurrency but not real parallel
+# graph branches (no per-question checkpoint/resumability, no visibility
+# from the graph itself).
 
-def _route_after_critic(state: AgentState) -> str:
+def _fan_out_from_planner(state: AgentState) -> list[Send]:
+    """First research wave: one Send branch per planner sub-question."""
+    return [Send("research_one", {"question": q}) for q in state["sub_questions"]]
+
+
+def _route_after_critic(state: AgentState) -> list[Send] | str:
     """
     Conditional edge evaluated after every critic run.
 
-    Returns the name of the next node.  LangGraph uses the returned string
-    as a key into the dict passed to add_conditional_edges to resolve the
-    actual target node — the extra indirection lets you rename nodes without
-    touching the routing logic.
+    If more research is needed, fan out one Send branch per gap the critic
+    identified (a second research wave). Otherwise proceed to synthesizer.
+    Which question set to use (sub_questions vs gaps) is now encoded by
+    *which routing function fires* rather than an iteration-count check.
     """
-    return "researcher" if state.get("needs_more_research") else "synthesizer"
+    if state.get("needs_more_research"):
+        return [Send("research_one", {"question": q}) for q in state.get("gaps", [])]
+    return "synthesizer"
 
 
 # ── Graph factory ─────────────────────────────────────────────────────────────
@@ -40,18 +58,27 @@ def build_graph(checkpointer=None):
 
         START
           │
-        planner          ← decomposes topic into sub-questions
+        planner                     ← decomposes topic into sub-questions
           │
-        researcher       ← agentic tool loop per sub-question (parallel)
+        [Send research_one × N]     ← fan-out: one branch per sub-question,
+          │                            each its own checkpointed node instance
+        research_one  (parallel)
           │
-        critic           ← evaluates coverage, sets needs_more_research
+        critic                      ← join point; evaluates coverage,
+          │                            sets needs_more_research, bumps iteration
           │
-        ┌─┴──────────────────────────────┐
-        │ needs_more_research=True        │ needs_more_research=False
-        ▼                                 ▼
-      researcher  (loop)            synthesizer   ← [INTERRUPT HERE]
-                                         │
-                                        END
+        ┌─┴────────────────────────────────┐
+        │ needs_more_research=True          │ needs_more_research=False
+        ▼                                   ▼
+      [Send research_one × N]  (loop)  synthesizer   ← [INTERRUPT HERE]
+      → research_one → critic               │
+                                            END
+
+    Sub-question fan-out uses LangGraph's `Send` API (see _fan_out_from_planner
+    and _route_after_critic) rather than a single node doing asyncio.gather
+    internally. Each Send spawns an independent instance of research_one with
+    its own checkpoint; all instances join back into shared AgentState via the
+    research_results reducer before critic runs.
 
     The interrupt_before=["synthesizer"] pause lets a human inspect the
     research_results and critique before the final report is written.
@@ -67,25 +94,28 @@ def build_graph(checkpointer=None):
 
     # ── Register nodes ────────────────────────────────────────────────────────
     g.add_node("planner", planner_node)
-    g.add_node("researcher", researcher_node)
+    g.add_node("research_one", research_one_node)
     g.add_node("critic", critic_node)
     g.add_node("synthesizer", synthesizer_node)
 
     # ── Wire edges ────────────────────────────────────────────────────────────
     g.add_edge(START, "planner")
-    g.add_edge("planner", "researcher")
-    g.add_edge("researcher", "critic")
 
-    # The conditional edge replaces the simple "critic → synthesizer" edge.
-    # _route_after_critic is called with the post-critic state and returns
-    # one of the keys in the mapping dict below.
+    # Fan-out: planner emits one Send per sub-question instead of a plain edge.
+    g.add_conditional_edges("planner", _fan_out_from_planner, ["research_one"])
+
+    # Join: every research_one branch (however many Sends were fired) routes
+    # to critic. LangGraph waits for all parallel branches from the same
+    # superstep before running critic.
+    g.add_edge("research_one", "critic")
+
+    # Second conditional edge: loop back with a fresh fan-out (gaps) or
+    # proceed to synthesizer. _route_after_critic returns either a list of
+    # Send objects or the string "synthesizer".
     g.add_conditional_edges(
         "critic",
         _route_after_critic,
-        {
-            "researcher": "researcher",   # loop: fill identified gaps
-            "synthesizer": "synthesizer", # proceed: coverage is sufficient
-        },
+        ["research_one", "synthesizer"],
     )
 
     g.add_edge("synthesizer", END)
