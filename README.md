@@ -9,59 +9,7 @@ high-performance computing.
 
 ## Architecture
 
-```mermaid
-flowchart TD
-    User(["👤 User"])
-
-    subgraph Frontend["React Frontend (Vite · port 5173)"]
-        UI["Topic input\nResearch summary\nStreaming report"]
-    end
-
-    subgraph API["FastAPI Backend (port 8000)"]
-        R1["POST /api/research"]
-        R2["GET /api/research/{id}/stream  (SSE)"]
-    end
-
-    subgraph Graph["LangGraph State Machine"]
-        direction TB
-        PL["🗂 Planner\ndecomposes topic → sub-questions"]
-        RS["🔍 Researcher\nagentic tool loop per sub-question"]
-        CR["🧐 Critic\nevaluates coverage · flags gaps"]
-        SY["✍ Synthesizer\nwrites final report · streams tokens"]
-
-        PL --> RS
-        RS --> CR
-        CR -->|"needs_more=True"| RS
-        CR -->|"needs_more=False"| SY
-    end
-
-    subgraph Tools["Tools  (parallel scatter-gather)"]
-        T1["retrieve_documents\nANN → rerank"]
-        T2["web_search\nTavily"]
-    end
-
-    subgraph Memory["ChromaDB"]
-        M1[("Semantic memory\npaper corpus\nchild + parent chunks")]
-        M2[("Episodic memory\nsession summaries\npast research")]
-    end
-
-    subgraph Infra["Infrastructure"]
-        CK[("SQLite\ncheckpoints")]
-        LS["LangSmith\ntracing"]
-    end
-
-    User -->|"topic"| UI
-    UI -->|"POST"| R1
-    R1 --> PL
-    M2 -->|"prior_context"| PL
-    RS -->|"parallel"| T1 & T2
-    T1 --> M1
-    SY -->|"SSE tokens"| R2
-    R2 -->|"stream"| UI
-    SY -.->|"store summary"| M2
-    Graph -.->|"checkpoint\nper node"| CK
-    Graph -.->|"trace spans"| LS
-```
+![Architecture](docs/architecture.svg)
 
 ---
 

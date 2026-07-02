@@ -1,0 +1,154 @@
+<svg viewBox="0 0 880 680" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, sans-serif" role="img">
+  <title>AI Research Agent — system architecture</title>
+  <rect width="880" height="680" fill="#0f0f17" rx="10"/>
+  <defs>
+    <marker id="a0" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#585b70"/></marker>
+    <marker id="ap" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#cba6f7"/></marker>
+    <marker id="ay" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#f9e2af"/></marker>
+    <marker id="ag" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#a6e3a1"/></marker>
+    <marker id="ac" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#89dceb"/></marker>
+    <marker id="ao" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#fab387"/></marker>
+  </defs>
+
+  <!-- left divider -->
+  <line x1="76" y1="8" x2="76" y2="628" stroke="#1e1e2e" stroke-width="1"/>
+
+  <!-- LAYER LABELS -->
+  <text x="12" y="30"  fill="#45475a" font-size="9" font-weight="700" letter-spacing="0.1em">USER</text>
+  <text x="12" y="80"  fill="#45475a" font-size="9" font-weight="700" letter-spacing="0.1em">FRONTEND</text>
+  <text x="12" y="150" fill="#45475a" font-size="9" font-weight="700" letter-spacing="0.1em">API</text>
+  <text x="12" y="238" fill="#45475a" font-size="9" font-weight="700" letter-spacing="0.1em">GRAPH</text>
+  <text x="12" y="332" fill="#45475a" font-size="9" font-weight="700" letter-spacing="0.1em">TOOLS</text>
+  <text x="12" y="432" fill="#45475a" font-size="9" font-weight="700" letter-spacing="0.1em">MEMORY</text>
+  <text x="12" y="522" fill="#45475a" font-size="9" font-weight="700" letter-spacing="0.1em">INGEST</text>
+
+  <!-- USER -->
+  <rect x="390" y="12" width="100" height="28" rx="14" fill="#313244"/>
+  <text x="440" y="30" fill="#cdd6f4" text-anchor="middle" font-size="11" font-weight="600">User</text>
+
+  <!-- FRONTEND -->
+  <rect x="305" y="56" width="270" height="44" rx="6" fill="#1e3a5f" stroke="#89b4fa" stroke-width="1.5"/>
+  <text x="440" y="76" fill="#89b4fa" text-anchor="middle" font-size="11" font-weight="700">React Frontend</text>
+  <text x="440" y="92" fill="#6c7086" text-anchor="middle" font-size="9">topic input · research summary · SSE stream</text>
+  <line x1="440" y1="40" x2="440" y2="56" stroke="#585b70" stroke-width="1.5" marker-end="url(#a0)"/>
+
+  <!-- API -->
+  <rect x="192" y="130" width="196" height="36" rx="5" fill="#1a2a1a" stroke="#a6e3a1" stroke-width="1.5"/>
+  <text x="290" y="147" fill="#a6e3a1" text-anchor="middle" font-size="10" font-weight="700">POST /api/research</text>
+  <text x="290" y="161" fill="#6c7086" text-anchor="middle" font-size="9">runs graph → interrupt_before synthesizer</text>
+
+  <rect x="492" y="130" width="196" height="36" rx="5" fill="#1a2a1a" stroke="#a6e3a1" stroke-width="1.5"/>
+  <text x="590" y="147" fill="#a6e3a1" text-anchor="middle" font-size="10" font-weight="700">GET /stream  (SSE)</text>
+  <text x="590" y="161" fill="#6c7086" text-anchor="middle" font-size="9">resumes graph · streams synthesis tokens</text>
+
+  <line x1="388" y1="100" x2="318" y2="130" stroke="#585b70" stroke-width="1.5" marker-end="url(#a0)"/>
+  <line x1="492" y1="100" x2="562" y2="130" stroke="#585b70" stroke-width="1.5" marker-end="url(#a0)"/>
+
+  <!-- GRAPH NODES -->
+  <rect x="162" y="210" width="124" height="52" rx="5" fill="#2d1e4a" stroke="#cba6f7" stroke-width="1.5"/>
+  <text x="224" y="230" fill="#cba6f7" text-anchor="middle" font-size="11" font-weight="700">Planner</text>
+  <text x="224" y="246" fill="#6c7086" text-anchor="middle" font-size="9">topic → sub-questions</text>
+  <text x="224" y="258" fill="#45475a" text-anchor="middle" font-size="9">injects prior_context</text>
+
+  <rect x="306" y="210" width="124" height="52" rx="5" fill="#2d1e4a" stroke="#cba6f7" stroke-width="1.5"/>
+  <text x="368" y="230" fill="#cba6f7" text-anchor="middle" font-size="11" font-weight="700">Researcher</text>
+  <text x="368" y="246" fill="#6c7086" text-anchor="middle" font-size="9">agentic tool loop</text>
+  <text x="368" y="258" fill="#45475a" text-anchor="middle" font-size="9">parallel per question</text>
+
+  <rect x="450" y="210" width="124" height="52" rx="5" fill="#2d1e4a" stroke="#cba6f7" stroke-width="1.5"/>
+  <text x="512" y="230" fill="#cba6f7" text-anchor="middle" font-size="11" font-weight="700">Critic</text>
+  <text x="512" y="246" fill="#6c7086" text-anchor="middle" font-size="9">evaluates coverage</text>
+  <text x="512" y="258" fill="#45475a" text-anchor="middle" font-size="9">identifies gaps</text>
+
+  <rect x="594" y="210" width="124" height="52" rx="5" fill="#2d1e4a" stroke="#cba6f7" stroke-width="1.5"/>
+  <text x="656" y="230" fill="#cba6f7" text-anchor="middle" font-size="11" font-weight="700">Synthesizer</text>
+  <text x="656" y="246" fill="#6c7086" text-anchor="middle" font-size="9">writes final report</text>
+  <text x="656" y="258" fill="#45475a" text-anchor="middle" font-size="9">streams tokens → SSE</text>
+
+  <line x1="286" y1="236" x2="306" y2="236" stroke="#cba6f7" stroke-width="1.5" marker-end="url(#ap)"/>
+  <line x1="430" y1="236" x2="450" y2="236" stroke="#cba6f7" stroke-width="1.5" marker-end="url(#ap)"/>
+  <line x1="574" y1="236" x2="594" y2="236" stroke="#cba6f7" stroke-width="1.5" marker-end="url(#ap)"/>
+
+  <!-- Critic loop-back -->
+  <path d="M 512 210 Q 512 188 440 188 Q 368 188 368 210" fill="none" stroke="#f9e2af" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#ay)"/>
+  <text x="440" y="184" fill="#f9e2af" text-anchor="middle" font-size="9">needs_more = True</text>
+
+  <!-- POST → Planner -->
+  <line x1="290" y1="166" x2="237" y2="210" stroke="#585b70" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#a0)"/>
+
+  <!-- Synthesizer → GET SSE -->
+  <path d="M 636 210 Q 626 182 590 166" fill="none" stroke="#a6e3a1" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#ag)"/>
+
+  <!-- SQLite -->
+  <rect x="746" y="212" width="86" height="48" rx="5" fill="#1e1e2e" stroke="#45475a" stroke-width="1"/>
+  <text x="789" y="231" fill="#585b70" text-anchor="middle" font-size="10" font-weight="600">SQLite</text>
+  <text x="789" y="246" fill="#45475a" text-anchor="middle" font-size="9">checkpoints</text>
+  <text x="789" y="257" fill="#45475a" text-anchor="middle" font-size="8">per node</text>
+  <line x1="718" y1="236" x2="746" y2="236" stroke="#45475a" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#a0)"/>
+
+  <!-- TOOLS -->
+  <rect x="188" y="312" width="190" height="38" rx="5" fill="#1e1e2e" stroke="#f9e2af" stroke-width="1.5"/>
+  <text x="283" y="329" fill="#f9e2af" text-anchor="middle" font-size="10" font-weight="600">retrieve_documents</text>
+  <text x="283" y="344" fill="#6c7086" text-anchor="middle" font-size="9">ANN search → Cohere rerank</text>
+
+  <rect x="430" y="312" width="140" height="38" rx="5" fill="#1e1e2e" stroke="#f9e2af" stroke-width="1.5"/>
+  <text x="500" y="329" fill="#f9e2af" text-anchor="middle" font-size="10" font-weight="600">web_search</text>
+  <text x="500" y="344" fill="#6c7086" text-anchor="middle" font-size="9">Tavily API</text>
+
+  <line x1="344" y1="262" x2="300" y2="312" stroke="#f9e2af" stroke-width="1.5" marker-end="url(#ay)"/>
+  <line x1="400" y1="262" x2="462" y2="312" stroke="#f9e2af" stroke-width="1.5" marker-end="url(#ay)"/>
+  <text x="378" y="294" fill="#f9e2af" text-anchor="middle" font-size="9">parallel</text>
+
+  <!-- MEMORY -->
+  <ellipse cx="244" cy="432" rx="112" ry="28" fill="#121e28" stroke="#89dceb" stroke-width="1.5"/>
+  <text x="244" y="428" fill="#89dceb" text-anchor="middle" font-size="10" font-weight="600">Semantic Memory</text>
+  <text x="244" y="443" fill="#6c7086" text-anchor="middle" font-size="9">paper corpus · ChromaDB</text>
+
+  <ellipse cx="632" cy="432" rx="112" ry="28" fill="#121e28" stroke="#89dceb" stroke-width="1.5"/>
+  <text x="632" y="428" fill="#89dceb" text-anchor="middle" font-size="10" font-weight="600">Episodic Memory</text>
+  <text x="632" y="443" fill="#6c7086" text-anchor="middle" font-size="9">session summaries · ChromaDB</text>
+
+  <!-- retrieve → Semantic read -->
+  <line x1="262" y1="350" x2="250" y2="404" stroke="#89dceb" stroke-width="1.5" marker-end="url(#ac)"/>
+  <text x="275" y="380" fill="#89dceb" font-size="9">read</text>
+
+  <!-- Synthesizer → Episodic store -->
+  <path d="M 656 262 Q 656 350 640 404" fill="none" stroke="#89dceb" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#ac)"/>
+  <text x="668" y="342" fill="#89dceb" font-size="9">store</text>
+
+  <!-- Episodic → Planner prior_context -->
+  <path d="M 520 432 L 520 474 L 100 474 L 100 236 L 162 236" fill="none" stroke="#89dceb" stroke-width="1.5" stroke-dasharray="4,2" stroke-linejoin="round" marker-end="url(#ac)"/>
+  <text x="310" y="469" fill="#89dceb" text-anchor="middle" font-size="9">prior_context</text>
+
+  <!-- INGEST -->
+  <rect x="88" y="492" width="476" height="60" rx="6" fill="#1a1200" stroke="#fab387" stroke-width="1.5"/>
+  <text x="326" y="511" fill="#fab387" text-anchor="middle" font-size="10" font-weight="700">Ingestion Pipeline  ·  one-shot job</text>
+  <text x="326" y="526" fill="#6c7086" text-anchor="middle" font-size="9">fetcher.py  →  chunker.py  →  embedder.py  →  store.py</text>
+  <text x="326" y="540" fill="#45475a" text-anchor="middle" font-size="8">httpx  ·  parent/child chunks  ·  bge-large-en-v1.5  ·  ChromaDB upsert</text>
+
+  <!-- ArXiv source -->
+  <rect x="614" y="500" width="148" height="44" rx="5" fill="#1a1a1a" stroke="#45475a" stroke-width="1"/>
+  <text x="688" y="518" fill="#585b70" text-anchor="middle" font-size="9" font-weight="600">ArXiv papers</text>
+  <text x="688" y="531" fill="#45475a" text-anchor="middle" font-size="8">RAG · ReAct · HyDE</text>
+  <text x="688" y="541" fill="#45475a" text-anchor="middle" font-size="8">Tree of Thoughts · LLM-judge</text>
+  <line x1="614" y1="522" x2="564" y2="522" stroke="#45475a" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#a0)"/>
+
+  <!-- Ingest → Semantic write -->
+  <line x1="244" y1="492" x2="244" y2="460" stroke="#fab387" stroke-width="2.5" marker-end="url(#ao)"/>
+  <text x="256" y="478" fill="#fab387" font-size="9">write</text>
+
+  <!-- LEGEND -->
+  <rect x="88" y="572" width="748" height="44" rx="5" fill="#13131f" stroke="#313244" stroke-width="1"/>
+  <line x1="108" y1="597" x2="132" y2="597" stroke="#cba6f7" stroke-width="2" marker-end="url(#ap)"/>
+  <text x="136" y="601" fill="#9399b2" font-size="9">LangGraph edge</text>
+  <line x1="244" y1="597" x2="268" y2="597" stroke="#f9e2af" stroke-width="2" marker-end="url(#ay)"/>
+  <text x="272" y="601" fill="#9399b2" font-size="9">tool call</text>
+  <line x1="346" y1="597" x2="370" y2="597" stroke="#89dceb" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#ac)"/>
+  <text x="374" y="601" fill="#9399b2" font-size="9">memory r/w</text>
+  <line x1="462" y1="597" x2="486" y2="597" stroke="#a6e3a1" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#ag)"/>
+  <text x="490" y="601" fill="#9399b2" font-size="9">SSE stream</text>
+  <line x1="572" y1="597" x2="596" y2="597" stroke="#fab387" stroke-width="2.5" marker-end="url(#ao)"/>
+  <text x="600" y="601" fill="#9399b2" font-size="9">ingest write</text>
+  <line x1="682" y1="597" x2="706" y2="597" stroke="#45475a" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#a0)"/>
+  <text x="710" y="601" fill="#9399b2" font-size="9">checkpoint</text>
+</svg>
