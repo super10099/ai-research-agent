@@ -112,6 +112,37 @@ cd frontend && npm run dev
 
 ---
 
+## Running Tests
+
+The full unit test suite (89 tests) runs with no API keys, no network calls,
+and no local models — every external dependency (Anthropic, Cohere, Tavily,
+ChromaDB's embedding model) is mocked or, where a real in-memory instance is
+cheap and more trustworthy than a mock (ChromaDB), swapped for
+`chromadb.EphemeralClient()`.
+
+```bash
+# Install dev dependencies (pytest, pytest-asyncio, ruff, mypy)
+uv sync --extra dev
+
+# Run everything
+uv run pytest
+
+# Run one module's tests
+uv run pytest tests/graph/test_builder.py -v
+```
+
+Coverage by layer:
+
+| Layer | What's tested |
+|---|---|
+| `ingestion/` | Hierarchical chunking invariants, batch embedding call contracts, ChromaDB store/fetch round trip, graceful-degradation fetch behavior |
+| `tools/` | Retrieval dedup + rerank ordering, web search formatting, parallel tool execution (including a real timing assertion that concurrency is faster than sequential) |
+| `memory/` | Episodic memory's cosine-distance threshold filtering, prior-context formatting, summary truncation |
+| `graph/` | The `operator.add` reducer contract, `Send`-based fan-out/join routing, and a fully stubbed two-wave end-to-end run (no LLM calls) that exercises the real LangGraph execution engine |
+| `api/` | Route handlers via a minimal test app (`httpx.AsyncClient` + `ASGITransport`), including a full SSE token/done stream test |
+
+---
+
 ## Project Structure
 
 ```
@@ -131,7 +162,7 @@ ai-research-agent/
 │   │   └── executor.py        # Parallel tool dispatcher (asyncio.to_thread)
 │   ├── graph/
 │   │   ├── state.py           # AgentState TypedDict + operator.add reducers
-│   │   ├── nodes.py           # planner / researcher / critic / synthesizer
+│   │   ├── nodes.py           # planner / research_one / critic / synthesizer
 │   │   ├── builder.py         # StateGraph wiring, interrupt, checkpointer factory
 │   │   └── run.py             # CLI driver with human-in-the-loop review
 │   ├── memory/

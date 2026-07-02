@@ -1,5 +1,6 @@
 # secrets
 .env
+*.swp
 
 # python
 __pycache__/

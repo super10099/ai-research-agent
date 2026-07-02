@@ -172,9 +172,10 @@ async def stream_synthesis(session_id: str, request: Request):
         session["status"] = "complete"
         yield {"data": json.dumps({"type": "done", "session_id": session_id})}
 
-    # ping_interval keeps the HTTP connection alive through proxies that close
-    # idle connections (common default is 60s timeout on many load balancers).
-    return EventSourceResponse(event_generator(), ping_interval=15)
+    # ping keeps the HTTP connection alive through proxies that close idle
+    # connections (common default is 60s timeout on many load balancers).
+    # Named ping_interval in older sse-starlette releases; renamed to ping.
+    return EventSourceResponse(event_generator(), ping=15)
 
 
 # ── Session state ─────────────────────────────────────────────────────────────
