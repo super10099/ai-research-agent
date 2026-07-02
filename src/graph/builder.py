@@ -16,7 +16,6 @@ from src.config import settings
 from src.graph.nodes import critic_node, planner_node, research_one_node, synthesizer_node
 from src.graph.state import AgentState
 
-
 # ── Routing functions ─────────────────────────────────────────────────────────
 #
 # Both of these return `Send` objects instead of plain node-name strings.
